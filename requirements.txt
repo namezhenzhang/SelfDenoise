@@ -1,8 +1,11 @@
+transformers==4.30.0
+tokenizer==0.13.0
+accelerate
+sentencepiece
 
 overrides
 pytorch-nlp
 nltk
-transformers
 scipy
 scikit-learn
 tensorboard
@@ -19,12 +22,10 @@ terminaltables
 tensorflow_hub
 tensorflow
 
-accelerate
-sentencepiece
 deepspeed
 openai
 py-cpuinfo
 mpi4py
 # torch._six = (bool,int)
-
+fire
 
