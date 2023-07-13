@@ -3,7 +3,6 @@ import csv
 with open('/data/private/zhangzhen/dir3/RanMASK/dataset/agnews/test.csv', newline='') as csvfile:
     with open("test.tsv", "w", newline="", encoding="utf-8") as file:
     
-        # 创建一个写入器，设置delimiter为"\t"，quotechar为""，避免将文本引号括起来
         writer = csv.writer(file, delimiter="\t", quotechar="", quoting=csv.QUOTE_NONE)
     
 

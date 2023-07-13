@@ -1,19 +1,17 @@
 #!/bin/bash
 
-# conda create -n ranmask python==3.9 -y
-# conda init bash 
-
-# source ~/.bashrc
-# conda activate ranmask
-# pip install -r requirements.txt
-
-
-# mkdir alpaca
+mkdir alpaca
 cd alpaca
 # get convert_llama_weights_to_hf.py
 wget https://raw.githubusercontent.com/huggingface/transformers/main/src/transformers/models/llama/convert_llama_weights_to_hf.py -O convert_llama_weights_to_hf.py
 
 #download llama
+mkdir llama_ckpt
+wget https://agi.gpt4.org/llama/LLaMA/tokenizer.model -O ./llama_ckpt/tokenizer.model
+wget https://agi.gpt4.org/llama/LLaMA/tokenizer_checklist.chk -O ./llama_ckpt/tokenizer_checklist.chk
+wget https://agi.gpt4.org/llama/LLaMA/7B/consolidated.00.pth -O ./llama_ckpt/7B/consolidated.00.pth
+wget https://agi.gpt4.org/llama/LLaMA/7B/params.json -O ./llama_ckpt/7B/params.json
+wget https://agi.gpt4.org/llama/LLaMA/7B/checklist.chk -O ./llama_ckpt/7B/checklist.chk
 
 # covert llamma weight to hf version
 PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python python3 convert_llama_weights_to_hf.py \
@@ -33,8 +31,33 @@ git clone git@github.com:tatsu-lab/stanford_alpaca.git
 python stanford_alpaca/weight_diff.py recover --path_raw llama_hf_ckpt --path_diff alpaca-7b-wdiff --path_tuned alpaca_ckpt
 
 
-wget https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.1.tar.gz
-tar -xvf openmpi-4.1.1.tar.gz
-cd openmpi-4.1.1
-./configure --prefix=$HOME/local --disable-dlopen
-make all install
+
+
+
+
+
+# wget https://agi.gpt4.org/llama/LLaMA/tokenizer.model -O ./tokenizer.model
+# wget https://agi.gpt4.org/llama/LLaMA/tokenizer_checklist.chk -O ./tokenizer_checklist.chk
+# wget https://agi.gpt4.org/llama/LLaMA/7B/consolidated.00.pth -O ./7B/consolidated.00.pth
+# wget https://agi.gpt4.org/llama/LLaMA/7B/params.json -O ./7B/params.json
+# wget https://agi.gpt4.org/llama/LLaMA/7B/checklist.chk -O ./7B/checklist.chk
+# wget https://agi.gpt4.org/llama/LLaMA/13B/consolidated.00.pth -O ./13B/consolidated.00.pth
+# wget https://agi.gpt4.org/llama/LLaMA/13B/consolidated.01.pth -O ./13B/consolidated.01.pth
+# wget https://agi.gpt4.org/llama/LLaMA/13B/params.json -O ./13B/params.json
+# wget https://agi.gpt4.org/llama/LLaMA/13B/checklist.chk -O ./13B/checklist.chk
+# wget https://agi.gpt4.org/llama/LLaMA/30B/consolidated.00.pth -O ./30B/consolidated.00.pth
+# wget https://agi.gpt4.org/llama/LLaMA/30B/consolidated.01.pth -O ./30B/consolidated.01.pth
+# wget https://agi.gpt4.org/llama/LLaMA/30B/consolidated.02.pth -O ./30B/consolidated.02.pth
+# wget https://agi.gpt4.org/llama/LLaMA/30B/consolidated.03.pth -O ./30B/consolidated.03.pth
+# wget https://agi.gpt4.org/llama/LLaMA/30B/params.json -O ./30B/params.json
+# wget https://agi.gpt4.org/llama/LLaMA/30B/checklist.chk -O ./30B/checklist.chk
+# wget https://agi.gpt4.org/llama/LLaMA/65B/consolidated.00.pth -O ./65B/consolidated.00.pth
+# wget https://agi.gpt4.org/llama/LLaMA/65B/consolidated.01.pth -O ./65B/consolidated.01.pth
+# wget https://agi.gpt4.org/llama/LLaMA/65B/consolidated.02.pth -O ./65B/consolidated.02.pth
+# wget https://agi.gpt4.org/llama/LLaMA/65B/consolidated.03.pth -O ./65B/consolidated.03.pth
+# wget https://agi.gpt4.org/llama/LLaMA/65B/consolidated.04.pth -O ./65B/consolidated.04.pth
+# wget https://agi.gpt4.org/llama/LLaMA/65B/consolidated.05.pth -O ./65B/consolidated.05.pth
+# wget https://agi.gpt4.org/llama/LLaMA/65B/consolidated.06.pth -O ./65B/consolidated.06.pth
+# wget https://agi.gpt4.org/llama/LLaMA/65B/consolidated.07.pth -O ./65B/consolidated.07.pth
+# wget https://agi.gpt4.org/llama/LLaMA/65B/params.json -O ./65B/params.json
+# wget https://agi.gpt4.org/llama/LLaMA/65B/checklist.chk -O ./65B/checklist.chk

@@ -40,11 +40,11 @@ from trainer import (BaseTrainer,
                     MaskTrainer,
                     SAFERTrainer
                     )
-# from utils.textattack import build_english_attacker
-# from utils.textattack import CustomTextAttackDataset, SimplifidResult
-# from textattack.models.wrappers import HuggingFaceModelWrapper, HuggingFaceModelMaskEnsembleWrapper, HuggingFaceModelSaferEnsembleWrapper
-# from textattack.loggers.attack_log_manager import AttackLogManager
-# from textattack.attack_results import SuccessfulAttackResult, FailedAttackResult
+from utils.textattack import build_english_attacker
+from utils.textattack import CustomTextAttackDataset, SimplifidResult
+from textattack.models.wrappers import HuggingFaceModelWrapper, HuggingFaceModelMaskEnsembleWrapper, HuggingFaceModelSaferEnsembleWrapper
+from textattack.loggers.attack_log_manager import AttackLogManager
+from textattack.attack_results import SuccessfulAttackResult, FailedAttackResult
 from utils.public import auto_create
 from utils.certify import predict, lc_bound, population_radius_for_majority, population_radius_for_majority_by_estimating_lambda, population_lambda
 from torch.optim.adamw import AdamW
@@ -167,28 +167,28 @@ class Classifier:
         return [dataset, data_loader]
 
 
-    # def build_attacker(self, args: ClassifierArgs, **kwargs):
-    #     if args.training_type == 'sparse' or args.training_type == 'safer':
-    #         if args.dataset_name in ['agnews', 'imdb']:
-    #             batch_size = 300
-    #         else:
-    #             batch_size = 600
-    #         if args.training_type == 'sparse':
-    #             model_wrapper = HuggingFaceModelMaskEnsembleWrapper(args, 
-    #                                                                 self.model, 
-    #                                                                 self.tokenizer, 
-    #                                                                 batch_size=batch_size)
-    #         else:
-    #             model_wrapper = HuggingFaceModelSaferEnsembleWrapper(args, 
-    #                                                                 self.model, 
-    #                                                                 self.tokenizer, 
-    #                                                                 batch_size=batch_size)
-    #     else:
-    #         model_wrapper = HuggingFaceModelWrapper(self.model, self.tokenizer, batch_size=args.batch_size)
+    def build_attacker(self, args: ClassifierArgs, **kwargs):
+        if args.training_type == 'sparse' or args.training_type == 'safer':
+            if args.dataset_name in ['agnews', 'imdb']:
+                batch_size = 300
+            else:
+                batch_size = 600
+            if args.training_type == 'sparse':
+                model_wrapper = HuggingFaceModelMaskEnsembleWrapper(args, 
+                                                                    self.model, 
+                                                                    self.tokenizer, 
+                                                                    batch_size=batch_size)
+            else:
+                model_wrapper = HuggingFaceModelSaferEnsembleWrapper(args, 
+                                                                    self.model, 
+                                                                    self.tokenizer, 
+                                                                    batch_size=batch_size)
+        else:
+            model_wrapper = HuggingFaceModelWrapper(self.model, self.tokenizer, batch_size=args.batch_size)
         
 
-    #     attacker = build_english_attacker(args, model_wrapper)
-    #     return attacker
+        attacker = build_english_attacker(args, model_wrapper)
+        return attacker
 
     def build_writer(self, args: ClassifierArgs, **kwargs) -> Union[SummaryWriter, None]:
         writer = None
@@ -337,74 +337,74 @@ class Classifier:
         print(metric)
         logging.info(metric)
     
-    # def attack(self, args: ClassifierArgs, **kwargs):
-    #     # self.evaluate(args, is_training=False)
-    #     # self.evaluate(args, is_training=False)
-    #     self.loading_model_from_file(args.saving_dir, args.build_saving_file_name(description='best'))
-    #     self.model.eval()
+    def attack(self, args: ClassifierArgs, **kwargs):
+        # self.evaluate(args, is_training=False)
+        # self.evaluate(args, is_training=False)
+        self.loading_model_from_file(args.saving_dir, args.build_saving_file_name(description='best'))
+        self.model.eval()
 
-    #     # build test dataset 
-    #     dataset, _ = self.build_data_loader(args, args.evaluation_data_type, tokenizer=False)
-    #     test_instances = dataset.data
+        # build test dataset 
+        dataset, _ = self.build_data_loader(args, args.evaluation_data_type, tokenizer=False)
+        test_instances = dataset.data
        
-    #     # build attacker
-    #     attacker = self.build_attacker(args)
+        # build attacker
+        attacker = self.build_attacker(args)
 
-    #     attacker_log_path = '{}'.format(args.build_logging_path())
-    #     attacker_log_path = os.path.join(args.logging_dir, attacker_log_path)
-    #     attacker_log_manager = AttackLogManager()
-    #     # attacker_log_manager.enable_stdout()
-    #     attacker_log_manager.add_output_file(os.path.join(attacker_log_path, '{}.txt'.format(args.attack_method)))
+        attacker_log_path = '{}'.format(args.build_logging_path())
+        attacker_log_path = os.path.join(args.logging_dir, attacker_log_path)
+        attacker_log_manager = AttackLogManager()
+        # attacker_log_manager.enable_stdout()
+        attacker_log_manager.add_output_file(os.path.join(attacker_log_path, '{}.txt'.format(args.attack_method)))
         
-    #     for i in range(args.attack_times):
-    #         print("Attack time {}".format(i))
+        for i in range(args.attack_times):
+            print("Attack time {}".format(i))
             
-    #         choice_instances = np.random.choice(test_instances, size=(args.attack_numbers,),replace=False)
-    #         dataset = CustomTextAttackDataset.from_instances(args.dataset_name, choice_instances, self.data_reader.get_labels())
-    #         results_iterable = attacker.attack_dataset(dataset)
-    #         description = tqdm(results_iterable, total=len(choice_instances))
-    #         result_statistics = SimplifidResult()
-    #         for result in description:
-    #             try:
-    #                 attacker_log_manager.log_result(result)
-    #                 result_statistics(result)
-    #                 description.set_description(result_statistics.__str__())
-    #             except RuntimeError as e:
-    #                 print('error in process')
+            choice_instances = np.random.choice(test_instances, size=(args.attack_numbers,),replace=False)
+            dataset = CustomTextAttackDataset.from_instances(args.dataset_name, choice_instances, self.data_reader.get_labels())
+            results_iterable = attacker.attack_dataset(dataset)
+            description = tqdm(results_iterable, total=len(choice_instances))
+            result_statistics = SimplifidResult()
+            for result in description:
+                try:
+                    attacker_log_manager.log_result(result)
+                    result_statistics(result)
+                    description.set_description(result_statistics.__str__())
+                except RuntimeError as e:
+                    print('error in process')
 
-    #     attacker_log_manager.enable_stdout()
-    #     attacker_log_manager.log_summary()
+        attacker_log_manager.enable_stdout()
+        attacker_log_manager.log_summary()
 
-    # def augmentation(self, args: ClassifierArgs, **kwargs):
-    #     self.loading_model_from_file(args.saving_dir, args.build_saving_file_name(description='best'))
-    #     self.model.eval()
+    def augmentation(self, args: ClassifierArgs, **kwargs):
+        self.loading_model_from_file(args.saving_dir, args.build_saving_file_name(description='best'))
+        self.model.eval()
 
-    #     train_instances, _ = self.build_data_loader(args, 'train', tokenizer=False)
-    #     train_dataset_len = len(train_instances.data)
-    #     print('Training Set: {} sentences. '.format(train_dataset_len))
+        train_instances, _ = self.build_data_loader(args, 'train', tokenizer=False)
+        train_dataset_len = len(train_instances.data)
+        print('Training Set: {} sentences. '.format(train_dataset_len))
         
-    #     # delete instance whose length is smaller than 3
-    #     train_instances_deleted = [instance for instance in train_instances.data if instance.length() >= 3]
-    #     dataset_to_aug = np.random.choice(train_instances_deleted, size=(int(train_dataset_len * 0.5), ), replace=False)
+        # delete instance whose length is smaller than 3
+        train_instances_deleted = [instance for instance in train_instances.data if instance.length() >= 3]
+        dataset_to_aug = np.random.choice(train_instances_deleted, size=(int(train_dataset_len * 0.5), ), replace=False)
 
-    #     dataset_to_write = np.random.choice(train_instances.data, size=(int(train_dataset_len * 0.5), ), replace=False).tolist()
-    #     attacker = self.build_attacker(args)
-    #     attacker_log_manager = AttackLogManager()
-    #     dataset = CustomTextAttackDataset.from_instances(args.dataset_name, dataset_to_aug, self.data_reader.get_labels())
-    #     results_iterable = attacker.attack_dataset(dataset)
-    #     aug_instances = []
-    #     for result, instance in tqdm(zip(results_iterable, dataset_to_aug), total=len(dataset)):
-    #         try:
-    #             adv_sentence = result.perturbed_text()
-    #             aug_instances.append(InputInstance.from_instance_and_perturb_sentence(instance, adv_sentence))
-    #         except:
-    #             print('one error happend, delete one instance')
+        dataset_to_write = np.random.choice(train_instances.data, size=(int(train_dataset_len * 0.5), ), replace=False).tolist()
+        attacker = self.build_attacker(args)
+        attacker_log_manager = AttackLogManager()
+        dataset = CustomTextAttackDataset.from_instances(args.dataset_name, dataset_to_aug, self.data_reader.get_labels())
+        results_iterable = attacker.attack_dataset(dataset)
+        aug_instances = []
+        for result, instance in tqdm(zip(results_iterable, dataset_to_aug), total=len(dataset)):
+            try:
+                adv_sentence = result.perturbed_text()
+                aug_instances.append(InputInstance.from_instance_and_perturb_sentence(instance, adv_sentence))
+            except:
+                print('one error happend, delete one instance')
 
-    #     dataset_to_write.extend(aug_instances)
-    #     self.data_reader.saving_instances(dataset_to_write, args.dataset_dir, 'aug_{}'.format(args.attack_method))
-    #     print('Writing {} Sentence. '.format(len(dataset_to_write)))
-    #     attacker_log_manager.enable_stdout()
-    #     attacker_log_manager.log_summary()
+        dataset_to_write.extend(aug_instances)
+        self.data_reader.saving_instances(dataset_to_write, args.dataset_dir, 'aug_{}'.format(args.attack_method))
+        print('Writing {} Sentence. '.format(len(dataset_to_write)))
+        attacker_log_manager.enable_stdout()
+        attacker_log_manager.log_summary()
 
     # def save_sentence:
     
