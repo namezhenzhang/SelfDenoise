@@ -9,6 +9,7 @@ def batch_model_predict(model_predict, inputs, batch_size=32):
     """
     outputs = []
     i = 0
+    print(len(inputs))
     while i < len(inputs):
         batch = inputs[i : i + batch_size]
         batch_preds = model_predict(batch)

@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
 
 
-    save_path = f"output/-pre-{args.predictor}-denoise-{args.denoise_method}-maskrate-{args.sparse_mask_rate}-num-{args.certify_numbers}-predensmb-{args.predict_ensemble}-ctf_ensmb-{args.ceritfy_ensemble}-mw-{args.mask_word}"
+    save_path = f"output/-pre-{args.predictor}-denoise-{args.denoise_method}-maskrate-{args.sparse_mask_rate}-num-{args.certify_numbers}-predensmb-{args.predict_ensemble}-ctf_ensmb-{args.ceritfy_ensemble}-mw-{args.mask_word}-ran-{args.random_probs_strategy}"
     args.save_path = save_path
     if args.local_rank==0:
         if not os.path.exists(save_path):
@@ -81,6 +81,10 @@ if __name__ == '__main__':
             os.makedirs(os.path.join(save_path,'pred_prediction'))
         if not os.path.exists(os.path.join(save_path,'certify_prediction')):
             os.makedirs(os.path.join(save_path,'certify_prediction'))
+        if not os.path.exists(os.path.join(save_path,'pred_prediction_prob')):
+            os.makedirs(os.path.join(save_path,'pred_prediction_prob'))
+        if not os.path.exists(os.path.join(save_path,'certify_prediction_prob')):
+            os.makedirs(os.path.join(save_path,'certify_prediction_prob'))
 
     set_random_seed(args.seed, no_tf=True)
 
@@ -92,3 +96,5 @@ if __name__ == '__main__':
     
 
     Classifier.run(args,alpaca=alpaca)
+
+    print('finish')

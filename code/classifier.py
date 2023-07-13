@@ -26,7 +26,7 @@ from data.dataset import ListDataset
 from utils.metrics import Metric, RandomSmoothAccuracyMetrics, RandomAblationCertifyMetric
 from utils.loss import ContrastiveLearningLoss, UnsupervisedCircleLoss
 from utils.mask import mask_instance, mask_forbidden_index
-from predictor import Predictor, Alpaca_sst2, Alpaca_agnews
+from predictor import Predictor
 from utils.utils import collate_fn, xlnet_collate_fn, convert_batch_to_bert_input_dict, build_forbidden_mask_words
 from utils.hook import EmbeddingHook
 
@@ -50,7 +50,7 @@ from utils.certify import predict, lc_bound, population_radius_for_majority, pop
 from torch.optim.adamw import AdamW
 
 
-from denoiser import denoise_instance
+from ranmask_v2.code2.old_code.denoiser import denoise_instance
 import os
 import random
 from collections import defaultdict
@@ -66,8 +66,8 @@ class Classifier:
         self.methods = {'train': self.train, 
                         'evaluate': self.evaluate,
                         'predict': self.predict, 
-                        # 'attack': self.attack,
-                        # 'augmentation': self.augmentation,
+                        'attack': self.attack,
+                        'augmentation': self.augmentation,
                         'certify': self.certify,
                         'statistics': self.statistics
                         }# 'certify': self.certify}
@@ -174,16 +174,19 @@ class Classifier:
             else:
                 batch_size = 600
             if args.training_type == 'sparse':
+                print("sparse attacker")
                 model_wrapper = HuggingFaceModelMaskEnsembleWrapper(args, 
                                                                     self.model, 
                                                                     self.tokenizer, 
-                                                                    batch_size=batch_size)
+                                                                    batch_size=args.batch_size)
             else:
+                print("safer attacker")
                 model_wrapper = HuggingFaceModelSaferEnsembleWrapper(args, 
                                                                     self.model, 
                                                                     self.tokenizer, 
-                                                                    batch_size=batch_size)
+                                                                    batch_size=args.batch_size)
         else:
+            print("other attacker")
             model_wrapper = HuggingFaceModelWrapper(self.model, self.tokenizer, batch_size=args.batch_size)
         
 
@@ -226,7 +229,7 @@ class Classifier:
             trainer = SAFERTrainer(args, self.data_processor, data_loader, self.model, self.loss_function, optimizer, lr_scheduler, writer)
         return trainer
 
-    def train(self, args: ClassifierArgs):
+    def train(self, args: ClassifierArgs,alpaca=None):
         # get dataset
         dataset, data_loader = self.build_data_loader(args, 'train')
 
@@ -337,11 +340,32 @@ class Classifier:
         print(metric)
         logging.info(metric)
     
-    def attack(self, args: ClassifierArgs, **kwargs):
+    def attack(self, args: ClassifierArgs, alpaca,**kwargs):
+        if args.predictor == "bert":
+            print('bert')
+            self.loading_model_from_file(args.saving_dir, args.build_saving_file_name(description='best'))
+            self.model.eval()
+        else:
+            alpaca_wrapper = alpaca
+            self.model = alpaca_wrapper
+            self.tokenizer = alpaca_wrapper.alpaca_tokenizer
+            self.tokenizer.mask_token = args.mask_word
+            
+
+            if args.predictor == "alpaca_sst2":
+                print('alpaca sst2')
+                alpaca_wrapper.as_sst2()
+            elif args.predictor == "alpaca_agnews":
+                print('alpaca agnews')
+                alpaca_wrapper.as_agnews()
+            else:
+                raise RuntimeError
+
         # self.evaluate(args, is_training=False)
         # self.evaluate(args, is_training=False)
-        self.loading_model_from_file(args.saving_dir, args.build_saving_file_name(description='best'))
-        self.model.eval()
+        print(self.tokenizer.mask_token)
+
+        
 
         # build test dataset 
         dataset, _ = self.build_data_loader(args, args.evaluation_data_type, tokenizer=False)
@@ -360,6 +384,7 @@ class Classifier:
             print("Attack time {}".format(i))
             
             choice_instances = np.random.choice(test_instances, size=(args.attack_numbers,),replace=False)
+            print(choice_instances)
             dataset = CustomTextAttackDataset.from_instances(args.dataset_name, choice_instances, self.data_reader.get_labels())
             results_iterable = attacker.attack_dataset(dataset)
             description = tqdm(results_iterable, total=len(choice_instances))
@@ -407,7 +432,7 @@ class Classifier:
         attacker_log_manager.log_summary()
 
     # def save_sentence:
-    
+    @torch.no_grad()
     def certify(self, args: ClassifierArgs, alpaca=None,**kwargs):
 
         log_file = open(os.path.join(args.save_path,'log.txt'),'w+')
@@ -417,6 +442,10 @@ class Classifier:
         cancate_p_list = []
         cancate_label_list = []
         guess_distri = [0,0,0,0,0,0,0,0,0,0]
+        guess_distri_ensemble = [0,0,0,0,0,0,0,0,0,0]
+
+        entropy_list = []
+        
         # self.evaluate(args, is_training=False)
         
         if args.predictor == "bert":
@@ -424,9 +453,11 @@ class Classifier:
             self.model.eval()
             predictor = Predictor(self.model, self.data_processor, args.model_type)
         elif args.predictor == "alpaca_sst2":
+            print('alpaca sst2')
             predictor = alpaca
             alpaca.as_sst2()
         elif args.predictor == "alpaca_agnews":
+            print('alpaca agnews')
             predictor = alpaca
             alpaca.as_agnews()
         else:
@@ -438,6 +469,7 @@ class Classifier:
             certify_dataset = dataset.data
         else:
             certify_dataset = np.random.choice(dataset.data, size=(args.certify_numbers, ), replace=False)
+        print(certify_dataset)
 
         description = tqdm(certify_dataset)
         num_labels = self.data_reader.NUM_LABELS
@@ -449,6 +481,9 @@ class Classifier:
         index_org_sentence = -1
         for data in description:
             index_org_sentence+=1
+            if args.stop_iter != -1:
+                if args.stop_iter-1 == index_org_sentence:
+                    break
 
             target = self.data_reader.get_label_to_idx(data.label)
             data_length = data.length()
@@ -470,7 +505,12 @@ class Classifier:
             
             keep_nums = data_length - round(data_length * args.sparse_mask_rate)
 
-            tmp_instances = self.mask_instance_decorator(args, data, args.predict_ensemble)
+            if args.random_probs_strategy != 'None':
+                random_probs = alpaca.cal_importance(data,strategy=args.random_probs_strategy)
+            else:
+                random_probs = None
+
+            tmp_instances = self.mask_instance_decorator(args, data, args.predict_ensemble, random_probs = random_probs)
 
             for instance in tmp_instances:
                 instance.text_a = instance.text_a.replace("<mask>", args.mask_word)
@@ -503,6 +543,15 @@ class Classifier:
             elif args.denoise_method == 'alpaca':
                 if not os.path.exists(os.path.join(args.save_path,"pred_denoised_sentence",f"{index_org_sentence}",f"a-0")):
                     alpaca.denoise_instances(tmp_instances)
+            elif args.denoise_method == 'roberta':
+                if not os.path.exists(os.path.join(args.save_path,"pred_denoised_sentence",f"{index_org_sentence}",f"a-0")):
+                    alpaca.roberta_denoise_instances(tmp_instances)
+            elif args.denoise_method == 'remove_mask':
+                if not os.path.exists(os.path.join(args.save_path,"pred_denoised_sentence",f"{index_org_sentence}",f"a-0")):
+                    for instance in tmp_instances:
+                        instance.text_a = instance.text_a.replace(f"{args.mask_word} ", '').replace(f" {args.mask_word}", '')
+                        if instance.text_b is not None:
+                            instance.text_b = instance.text_b.replace(f"{args.mask_word} ", '').replace(f" {args.mask_word}", '')
 
 
             # save or load pred_denoised_sentence
@@ -524,6 +573,7 @@ class Classifier:
                             file.write(instance.text_a)
                     else:
                         raise RuntimeError
+                    
             # load pred_prediction
             if args.recover_past_data:
                 if os.path.exists(os.path.join(args.save_path,"pred_prediction",f"{index_org_sentence}",f"0")):
@@ -537,19 +587,32 @@ class Classifier:
             else:
                 past_pred_predictions = None
 
+            # load pred_prediction_prob
+            if args.recover_past_data:
+                if os.path.exists(os.path.join(args.save_path,"pred_prediction_prob",f"{index_org_sentence}.npy")):
+                    past_pred_predictions_prob = np.load(os.path.join(args.save_path,"pred_prediction_prob",f"{index_org_sentence}.npy"))
+                else:
+                    past_pred_predictions_prob = None
+            else:
+                past_pred_predictions_prob = None
+
 
             if args.predictor == 'bert':
                 tmp_probs = predictor.predict_batch(tmp_instances)
             else:
-                tmp_probs, pred_predictions = predictor.predict_batch(tmp_instances,past_pred_predictions)
+                tmp_probs, pred_predictions = predictor.predict_batch(tmp_instances,past_pred_predictions,past_pred_predictions_prob)
 
                 # save pred_prediction
                 if not os.path.exists(os.path.join(args.save_path,"pred_prediction",f"{index_org_sentence}")):
                     os.makedirs(os.path.join(args.save_path,"pred_prediction",f"{index_org_sentence}"))
-                for i in range(len(pred_predictions)):
-                    pred_prediction_path = os.path.join(args.save_path,"pred_prediction",f"{index_org_sentence}",f'{i}')
-                    with open(pred_prediction_path, 'w') as file:
-                            file.write(pred_predictions[i])
+                if pred_predictions is not None:
+                    for i in range(len(pred_predictions)):
+                        pred_prediction_path = os.path.join(args.save_path,"pred_prediction",f"{index_org_sentence}",f'{i}')
+                        with open(pred_prediction_path, 'w') as file:
+                                file.write(pred_predictions[i])
+
+                # save pred_prediction_prob
+                np.save(os.path.join(args.save_path,"pred_prediction_prob",f"{index_org_sentence}.npy"), tmp_probs)
 
 
 
@@ -572,26 +635,32 @@ class Classifier:
             #         met(np.nan, data_length)
 
             
-
+            
             guess = np.argmax(np.bincount(np.argmax(tmp_probs, axis=-1), minlength=num_labels))
 
             guess_distri[guess] += 1
+
+            all_guess = np.argmax(tmp_probs, axis=-1)
+
+            for item in all_guess:
+                guess_distri_ensemble[item]+=1
             
             
             category[target] += 1
 
 
-
+            # print('certify',flush=True)
             if guess != target:
                 radius = np.nan
                 metric(np.nan, data_length)
+                print("lower_bound: nan",file=log_file,flush=True)
                 # continue
             else:
                 # metric(1, data_length)
                 
                 # ========
 
-                tmp_instances = self.mask_instance_decorator(args, data, args.ceritfy_ensemble)
+                tmp_instances = self.mask_instance_decorator(args, data, args.ceritfy_ensemble, random_probs=random_probs)
 
                 # save or load certify_masked_sentence
                 index_certify_masked_sentence=-1
@@ -625,6 +694,15 @@ class Classifier:
                 elif args.denoise_method == 'alpaca':
                     if not os.path.exists(os.path.join(args.save_path,"certify_denoised_sentence",f"{index_org_sentence}",f"a-0")):
                         alpaca.denoise_instances(tmp_instances)
+                elif args.denoise_method == 'roberta':
+                    if not os.path.exists(os.path.join(args.save_path,"certify_denoised_sentence",f"{index_org_sentence}",f"a-0")):
+                        alpaca.roberta_denoise_instances(tmp_instances)
+                elif args.denoise_method == 'remove_mask':
+                    if not os.path.exists(os.path.join(args.save_path,"certify_denoised_sentence",f"{index_org_sentence}",f"a-0")):
+                        for instance in tmp_instances:
+                            instance.text_a = instance.text_a.replace(f"{args.mask_word} ", '').replace(f" {args.mask_word}", '')
+                            if instance.text_b is not None:
+                                instance.text_b = instance.text_b.replace(f"{args.mask_word} ", '').replace(f" {args.mask_word}", '')
 
                 # save or load certify_denoised_sentence
                 if args.denoise_method is not None:
@@ -658,22 +736,40 @@ class Classifier:
                 else:
                     past_certify_predictions = None
 
+                if args.recover_past_data:
+                    if os.path.exists(os.path.join(args.save_path,"certify_prediction_prob",f"{index_org_sentence}.npy")):
+                        past_pred_predictions_prob = np.load(os.path.join(args.save_path,"certify_prediction_prob",f"{index_org_sentence}.npy"))
+                    else:
+                        past_pred_predictions_prob = None
+                else:
+                    past_pred_predictions_prob = None
+
                 if args.predictor == 'bert':
                     tmp_probs = predictor.predict_batch(tmp_instances)
                     # certify_predictions = None
                 else:
-                    tmp_probs, certify_predictions = predictor.predict_batch(tmp_instances,past_certify_predictions)
+                    tmp_probs, certify_predictions = predictor.predict_batch(tmp_instances,past_certify_predictions,past_pred_predictions_prob)
                     # save pred_prediction
                     if not os.path.exists(os.path.join(args.save_path,"certify_prediction",f"{index_org_sentence}")):
                         os.makedirs(os.path.join(args.save_path,"certify_prediction",f"{index_org_sentence}"))
-                    for i in range(len(certify_predictions)):
-                        certify_prediction_path = os.path.join(args.save_path,"certify_prediction",f"{index_org_sentence}",f'{i}')
-                        with open(certify_prediction_path, 'w') as file:
-                                file.write(certify_predictions[i])
+                    
+                    if certify_predictions is not None:
+                        for i in range(len(certify_predictions)):
+                            certify_prediction_path = os.path.join(args.save_path,"certify_prediction",f"{index_org_sentence}",f'{i}')
+                            with open(certify_prediction_path, 'w') as file:
+                                    file.write(certify_predictions[i])
 
-                guess_counts = np.bincount(np.argmax(tmp_probs, axis=-1), minlength=num_labels)[guess]
-                lower_bound, upper_bound = lc_bound(guess_counts, args.ceritfy_ensemble, args.alpha)
-                print('guess_counts:',np.bincount(np.argmax(tmp_probs, axis=-1), minlength=num_labels))
+                    # save certify_prediction_prob
+                    np.save(os.path.join(args.save_path,"certify_prediction_prob",f"{index_org_sentence}.npy"), tmp_probs)
+
+                guess_count = np.bincount(np.argmax(tmp_probs, axis=-1), minlength=num_labels)[guess]
+                lower_bound, upper_bound = lc_bound(guess_count, args.ceritfy_ensemble, args.alpha)
+
+                guess_counts = np.bincount(np.argmax(tmp_probs, axis=-1), minlength=num_labels)
+                print('guess_counts:',guess_counts)
+                tmp = guess_counts/guess_count.sum()
+                
+                entropy_list.append(-tmp*np.log(np.clip(tmp, 1e-6, 1)))
                 print("lower_bound:",lower_bound,file=log_file,flush=True)
                 if args.certify_lambda:
                     # tmp_instances, mask_indexes = mask_instance(data, args.sparse_mask_rate, self.tokenizer.mask_token,nums=args.ceritfy_ensemble * 2, return_indexes=True)
@@ -681,7 +777,7 @@ class Classifier:
                     # tmp_preds = np.argmax(tmp_probs, axis=-1)
                     # ablation_indexes = [list(set(list(range(data_length))) - set(indexes.tolist())) for indexes in mask_indexes]
                     # radius = population_radius_for_majority_by_estimating_lambda(lower_bound, data_length, keep_nums, tmp_preds, ablation_indexes, num_labels, guess, samplers = 200)
-                    radius = population_radius_for_majority(lower_bound, data_length, keep_nums, lambda_value=guess_counts / args.ceritfy_ensemble)
+                    radius = population_radius_for_majority(lower_bound, data_length, keep_nums, lambda_value=guess_count / args.ceritfy_ensemble)
                 else:
                     radius = population_radius_for_majority(lower_bound, data_length, keep_nums)
                 
@@ -698,7 +794,15 @@ class Classifier:
         print("certified accuracy 0~max radius(default 10)",file=log_file,flush=True)
         print(metric.get_certified_accuracy(),file=log_file,flush=True)
 
+        rates = np.array([0,1e-2,2e-2,3e-2,4e-2,5e-2,6e-2,7e-2,8e-2,9e-2,1e-1])
+        print(f"certified accuracy rate: {rates}",file=log_file,flush=True)
+        print(metric.get_certified_accuracy_rate(rates=rates),file=log_file,flush=True)
+
         print('guess_distri: ', guess_distri,file=log_file,flush=True)
+        guess_distri_ensemble = np.array(guess_distri_ensemble)
+        print('guess_distri_ensemble: ',guess_distri_ensemble/guess_distri_ensemble.sum(),file=log_file,flush=True)
+
+        print('mean entropy: ', np.mean(np.array(entropy_list)),file=log_file,flush=True)
         logging.info(metric)
 
         # logging metric certify_radius and length
@@ -767,12 +871,12 @@ class Classifier:
                                         args.build_saving_file_name(description='epoch{}'.format(epoch)))
 
 
-    def mask_instance_decorator(self, args: ClassifierArgs, instance:InputInstance, numbers:int=1, return_indexes:bool=False):
+    def mask_instance_decorator(self, args: ClassifierArgs, instance:InputInstance, numbers:int=1, return_indexes:bool=False,random_probs=None):
         if self.forbidden_words is not None:
             forbidden_index = mask_forbidden_index(instance.perturbable_sentence(), self.forbidden_words)
-            return mask_instance(instance, args.sparse_mask_rate, self.tokenizer.mask_token, numbers, return_indexes, forbidden_index)
+            return mask_instance(instance, args.sparse_mask_rate, self.tokenizer.mask_token, numbers, return_indexes, forbidden_index,random_probs=random_probs)
         else:
-            return mask_instance(instance, args.sparse_mask_rate, self.tokenizer.mask_token, numbers, return_indexes)
+            return mask_instance(instance, args.sparse_mask_rate, self.tokenizer.mask_token, numbers, return_indexes,random_probs=random_probs)
 
 
     @classmethod

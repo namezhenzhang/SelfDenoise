@@ -60,7 +60,7 @@ class HuggingFaceModelMaskEnsembleWrapper(PyTorchModelWrapper):
         model_device = next(self.model.parameters()).device
         input_dict = {k: [_dict[k] for _dict in inputs] for k in inputs[0]}
         input_dict = {
-            k: torch.tensor(v).to(model_device) for k, v in input_dict.items()
+            k: torch.nn.utils.rnn.pad_sequence([torch.tensor(vector).flip(0) for vector in v], batch_first=True).flip(1).to(model_device) for k, v in input_dict.items()
         }
         outputs = self.model(**input_dict)
 

@@ -57,7 +57,7 @@ class ClassifierArgs(ProgramArgs):
         # hotflip: HotFlip: White-box adversarial examples for text classification
         # safer: A structure-free approach for certified robustness to adversarial word substitutions. 
         # sparse: for RanMASK. Certified Robustness to Text Adversarial Attacks by Randomized [MASK]
-        self.training_type = ''
+        self.training_type = 'sparse'
 
         # for RanMASK
         self.sparse_mask_rate = 0.7 # the mask rate for RanMASK
@@ -87,11 +87,12 @@ class ClassifierArgs(ProgramArgs):
 
         # for SAFER
         self.safer_perturbation_set = 'perturbation_constraint_pca0.8_100.pkl'   # perturbation set path for safer trainer
+        # self.safer_perturbation_set = None
 
         # for attack
         self.attack_times = 1 # attack times for average record
         self.attack_method = 'pwws' # attack algorithm
-        self.attack_numbers = 100 # the examples numbers to be attack
+        self.attack_numbers = 10 # the examples numbers to be attack
         self.ensemble_method = 'votes' # in [votes mean], the ensemble type, Ses RanMASK paper
 
         # The following are some tricks that have been tried and used for training and can be ignored
@@ -113,6 +114,10 @@ class ClassifierArgs(ProgramArgs):
         self.world_size=1
         self.save_path=None
         self.recover_past_data=True
+        self.random_probs_strategy='None' #abs,relative
+        self.non_uniform = None
+        self.denoise_concat = False
+        self.stop_iter = -1
 
 
     def build_environment(self):

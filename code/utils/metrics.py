@@ -174,6 +174,15 @@ class RandomAblationCertifyMetric(Metric):
             certified_accuracy[i] = np.mean(radius>=i)
 
         return certified_accuracy
+    
+    def get_certified_accuracy_rate(self,rates=np.array([0,1e-2,2e-2,3e-2,4e-2,5e-2,6e-2,7e-2,8e-2,9e-2,1e-1])):
+
+        radius = np.array([-1 if np.isnan(radius) else radius/length for radius,length in zip(self._certify_radius,self._sentence_length)])
+        certified_accuracy_rate = np.zeros((len(rates)))
+        for i,rate in enumerate(rates):
+            certified_accuracy_rate[i] = np.mean(radius>=rate)
+
+        return certified_accuracy_rate
 
     @overrides
     def reset(self) -> None:

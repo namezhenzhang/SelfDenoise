@@ -21,7 +21,7 @@ from textattack.transformations import (
     WordSwapRandomCharacterInsertion,
     WordSwapRandomCharacterSubstitution,
 )
-
+from textattack.constraints.overlap import MaxWordsPerturbed
 from .attack_recipe import AttackRecipe
 
 
@@ -67,6 +67,7 @@ class DeepWordBugGao2018(AttackRecipe):
         # on edit distance (ϵ) to a constant 30 for each sample.
         #
         constraints.append(LevenshteinEditDistance(30))
+        constraints.append(MaxWordsPerturbed(max_percent=0.1))
         #
         # Goal is untargeted classification
         #

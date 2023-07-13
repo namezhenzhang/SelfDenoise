@@ -30,6 +30,12 @@ class ModelWrapper(ABC):
         Returns:
             tokens (list[list[int]]): List of list of ids
         """
+        if hasattr(self.tokenizer, "encode_plus"):
+            return [self.tokenizer.encode_plus(x) for x in inputs]
+            # print('encode_plus')
+            # tmp = dict(self.tokenizer.batch_encode_plus(inputs,padding=True))
+            # tmp.pop('token_type_ids')
+            # return [tmp]
         if hasattr(self.tokenizer, "batch_encode"):
             return self.tokenizer.batch_encode(inputs)
         else:

@@ -14,7 +14,7 @@ from textattack.search_methods import GreedyWordSwapWIR
 from textattack.transformations import WordSwapMaskedLM
 
 from .attack_recipe import AttackRecipe
-
+from textattack.constraints.overlap import MaxWordsPerturbed
 
 class BAEGarg2019(AttackRecipe):
     """Siddhant Garg and Goutham Ramakrishnan, 2019.
@@ -100,6 +100,7 @@ class BAEGarg2019(AttackRecipe):
             skip_text_shorter_than_window=True,
         )
         constraints.append(use_constraint)
+        constraints.append(MaxWordsPerturbed(max_percent=0.1))
         #
         # Goal is untargeted classification.
         #

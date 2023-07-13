@@ -26,7 +26,7 @@ from textattack.transformations import (
 )
 
 from .attack_recipe import AttackRecipe
-
+from textattack.constraints.overlap import MaxWordsPerturbed
 
 class TextBuggerLi2018(AttackRecipe):
     """Li, J., Ji, S., Du, T., Li, B., and Wang, T. (2018).
@@ -77,6 +77,7 @@ class TextBuggerLi2018(AttackRecipe):
         )
 
         constraints = [RepeatModification(), StopwordModification()]
+        constraints.append(MaxWordsPerturbed(max_percent=0.1))
         # In our experiment, we first use the Universal Sentence
         # Encoder [7], a model trained on a number of natural language
         # prediction tasks that require modeling the meaning of word
@@ -95,5 +96,6 @@ class TextBuggerLi2018(AttackRecipe):
         # Greedily swap words with "Word Importance Ranking".
         #
         search_method = GreedyWordSwapWIR()
+        
 
         return Attack(goal_function, constraints, transformation, search_method)

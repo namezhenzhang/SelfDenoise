@@ -1,20 +1,96 @@
-mkdir output
+CUDA_VISIBLE_DEVICES=1 \
+deepspeed code2/main.py --mode attack --dataset_name sst2 --attack_method deepwordbug --training_type None --attack_numbers 200 \
+--sparse_mask_rate 0.05 \
+--predict_ensemble 50 \
+--batch_size 64 \
+--predictor alpaca_sst2 \
 
-export CUDA_VISIBLE_DEVICES=1
-deepspeed code/main.py \
---mode certify \
---dataset_name agnews \
---training_type sparse \
---sparse_mask_rate 0 \
---certify_numbers 100 \
---predict_ensemble 1 \
---ceritfy_ensemble 0 \
---saving_dir /mnt/data/zhenzhang/dir1/ranmask/save_fake_models \
---denoise_method None \
---predictor alpaca_agnews \
---alpaca_batchsize 3 \
---world_size 1 \
---mask_word "###" \
+# export CUDA_VISIBLE_DEVICES=1
+# deepspeed code2/main.py \
+# --mode certify \
+# --dataset_name sst2 \
+# --training_type sparse \
+# --sparse_mask_rate 0.3 \
+# --certify_numbers 100 \
+# --predict_ensemble 50 \
+# --ceritfy_ensemble 0 \
+# --saving_dir /mnt/data/zhenzhang/dir1/ranmask/save_fake_models \
+# --denoise_method alpaca \
+# --predictor alpaca_sst2 \
+# --alpaca_batchsize 2 \
+# --world_size 1 \
+# --mask_word "<mask>" \
+
+# deepspeed code2/main.py --mode attack --dataset_name sst2 --attack_method textfooler --training_type safer --attack_numbers 500 \
+# --sparse_mask_rate 0.1 \
+# --predict_ensemble 50 \
+# --batch_size 64 \
+# --predictor alpaca_sst2 \
+
+# export CUDA_VISIBLE_DEVICES=0
+# deepspeed code2/main.py \
+# --mode certify \
+# --dataset_name agnews \
+# --training_type sparse \
+# --sparse_mask_rate 0.8 \
+# --certify_numbers 100 \
+# --predict_ensemble 50 \
+# --ceritfy_ensemble 500 \
+# --saving_dir /mnt/data/zhenzhang/dir1/ranmask/save_fake_models \
+# --denoise_method alpaca \
+# --predictor alpaca_agnews \
+# --alpaca_batchsize 2 \
+# --world_size 1 \
+# --mask_word "###" \
+
+# export CUDA_VISIBLE_DEVICES=1
+# deepspeed code2/main.py \
+# --mode certify \
+# --dataset_name agnews \
+# --training_type sparse \
+# --sparse_mask_rate 0.8 \
+# --certify_numbers 100 \
+# --predict_ensemble 50 \
+# --ceritfy_ensemble 500 \
+# --saving_dir /mnt/data/zhenzhang/dir1/ranmask/save_fake_models \
+# --denoise_method remove_mask \
+# --predictor alpaca_agnews \
+# --alpaca_batchsize 2 \
+# --world_size 1 \
+# --mask_word "<mask>" \
+# export CUDA_VISIBLE_DEVICES=0
+# deepspeed code2/main.py \
+# --mode certify \
+# --dataset_name agnews \
+# --training_type sparse \
+# --sparse_mask_rate 0.2 \
+# --certify_numbers 100 \
+# --predict_ensemble 50 \
+# --ceritfy_ensemble 0 \
+# --saving_dir /mnt/data/zhenzhang/dir1/ranmask/save_fake_models \
+# --denoise_method None \
+# --predictor alpaca_agnews \
+# --alpaca_batchsize 3 \
+# --world_size 1 \
+# --mask_word "<mask>" \
+# --random_probs_strategy relative \
+
+# export CUDA_VISIBLE_DEVICES=1
+# deepspeed code2/main.py \
+# --mode certify \
+# --dataset_name sst2 \
+# --training_type sparse \
+# --sparse_mask_rate 0 \
+# --certify_numbers 100 \
+# --predict_ensemble 1 \
+# --ceritfy_ensemble 0 \
+# --saving_dir /mnt/data/zhenzhang/dir1/ranmask/save_fake_models \
+# --denoise_method None \
+# --predictor alpaca_sst2 \
+# --alpaca_batchsize 3 \
+# --world_size 1 \
+# --mask_word "###" \
+# --random_probs_strategy relative \
 
 # export CUDA_VISIBLE_DEVICES=0
 # deepspeed code/main.py \
