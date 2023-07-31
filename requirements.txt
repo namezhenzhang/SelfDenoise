@@ -1,5 +1,5 @@
 transformers==4.30.0
-tokenizer==0.13.0
+tokenizer
 accelerate
 sentencepiece
 
@@ -21,10 +21,11 @@ datasets
 terminaltables
 tensorflow_hub
 tensorflow
-
 deepspeed
 openai
 py-cpuinfo
+lru-dict
+flair
 # torch._six = (bool,int)
 fire
 
