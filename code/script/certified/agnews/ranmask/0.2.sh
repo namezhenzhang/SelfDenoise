@@ -1,5 +1,5 @@
 #!/bin/bash
-deepspeed code/main.py \
+python code/main.py \
 --mode certify \
 --dataset_name agnews \
 --training_type sparse \

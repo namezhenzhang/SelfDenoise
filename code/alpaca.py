@@ -58,11 +58,11 @@ class Alpaca(torch.nn.Module):
         alpaca_model.cuda()
         alpaca_model.eval()
         
-        ds_engine = deepspeed.init_inference(alpaca_model,
-                                    mp_size=self.args.world_size,
-                                    dtype=torch.float16,
-                                    replace_method="auto",
-                                    replace_with_kernel_inject=True)
+        # ds_engine = deepspeed.init_inference(alpaca_model,
+        #                             mp_size=self.args.world_size,
+        #                             dtype=torch.float16,
+        #                             replace_method="auto",
+        #                             replace_with_kernel_inject=True)
         
         ds_engine = alpaca_model
         return alpaca_model, alpaca_tokenizer, ds_engine

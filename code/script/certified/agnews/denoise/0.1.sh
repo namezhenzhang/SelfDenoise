@@ -1,5 +1,6 @@
 #!/bin/bash
-deepspeed code/main.py \
+CUDA_VISIBLE_DEVICES=1 \
+python code/main.py \
 --mode certify \
 --dataset_name agnews \
 --training_type sparse \
