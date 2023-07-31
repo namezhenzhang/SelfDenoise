@@ -245,12 +245,12 @@ Technology"""
             prompt_list = []
 
         for output, instance in zip(output_list_a, instances):
-            print(instance.text_a)
-            print(instance.text_a.replace(f"{self.args.mask_word} ", '').replace(f" {self.args.mask_word}", ''))
+            # print(instance.text_a)
+            # print(instance.text_a.replace(f"{self.args.mask_word} ", '').replace(f" {self.args.mask_word}", ''))
 
-            print("-"*20)
-            print(output,flush=True)
-            print("="*20)
+            # print("-"*20)
+            # print(output,flush=True)
+            # print("="*20)
             instance.text_a = output
 
         for Input in text_b_list:
@@ -313,12 +313,12 @@ Technology"""
         output_list_a = self.roberta_tokenizer.batch_decode(predicted_token_id,skip_special_tokens=True)
 
         for output, instance in zip(output_list_a, instances):
-            print(instance.text_a)
-            print(instance.text_a.replace(f"{self.args.mask_word} ", '').replace(f" {self.args.mask_word}", ''))
+            # print(instance.text_a)
+            # print(instance.text_a.replace(f"{self.args.mask_word} ", '').replace(f" {self.args.mask_word}", ''))
 
-            print("-"*20)
-            print(output,flush=True)
-            print("="*20)
+            # print("-"*20)
+            # print(output,flush=True)
+            # print("="*20)
             instance.text_a = output
 
         if text_b_list[0] is not None:
@@ -331,12 +331,12 @@ Technology"""
             output_list_b = self.roberta_tokenizer.batch_decode(predicted_token_id,skip_special_tokens=True)
 
             for output, instance in zip(output_list_b, instances):
-                print(instance.text_b)
-                print(instance.text_b.replace(f"{self.args.mask_word} ", '').replace(f" {self.args.mask_word}", ''))
+                # print(instance.text_b)
+                # print(instance.text_b.replace(f"{self.args.mask_word} ", '').replace(f" {self.args.mask_word}", ''))
 
-                print("-"*20)
-                print(output,flush=True)
-                print("="*20)
+                # print("-"*20)
+                # print(output,flush=True)
+                # print("="*20)
                 instance.text_b = output
             for output, instance in zip(output_list_b, instances):
                 instance.text_b = output

@@ -1,4 +1,5 @@
 #!/bin/bash
+CUDA_VISIBLE_DEVICES=1 \
 python code/main.py \
 --mode certify \
 --dataset_name sst2 \
