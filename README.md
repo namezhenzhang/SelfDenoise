@@ -22,12 +22,12 @@ pip install -r ./requirement.txt
 ### Certified Accuracy
 <img src="./fig/certified.png" width="50%">
 
-Run scripts under `./code/script/certified` to reproduce the result.`
+Run scripts located in `./code/script/certified` to reproduce the result.`
 
 ### Empirical Robust Accuracy
 <img src="./fig/empirical.png" width="50%">
 
-Run scripts under `./code/script/empirical` to reproduce the result.
+Run scripts located in `./code/script/empirical` to reproduce the result.
 
 
 
