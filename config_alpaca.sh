@@ -7,6 +7,7 @@ wget https://raw.githubusercontent.com/huggingface/transformers/main/src/transfo
 
 #download llama
 mkdir llama_ckpt
+mkdir llama_ckpt/7B
 wget https://agi.gpt4.org/llama/LLaMA/tokenizer.model -O ./llama_ckpt/tokenizer.model
 wget https://agi.gpt4.org/llama/LLaMA/tokenizer_checklist.chk -O ./llama_ckpt/tokenizer_checklist.chk
 wget https://agi.gpt4.org/llama/LLaMA/7B/consolidated.00.pth -O ./llama_ckpt/7B/consolidated.00.pth
