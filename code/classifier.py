@@ -50,7 +50,7 @@ from utils.certify import predict, lc_bound, population_radius_for_majority, pop
 from torch.optim.adamw import AdamW
 
 
-from ranmask_v2.code2.old_code.denoiser import denoise_instance
+from old_code.denoiser import denoise_instance
 import os
 import random
 from collections import defaultdict
