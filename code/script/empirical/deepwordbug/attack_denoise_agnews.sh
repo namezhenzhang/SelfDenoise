@@ -5,4 +5,4 @@ python code/main.py --mode attack --dataset_name agnews --attack_method deepword
 --batch_size 4 \
 --predictor alpaca_agnews \
 --denoise_method alpaca \
---mask_word "<mask>" \
+--mask_word "###" \

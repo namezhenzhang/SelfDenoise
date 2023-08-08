@@ -12,4 +12,4 @@ python code/main.py \
 --predictor alpaca_agnews \
 --alpaca_batchsize 3 \
 --world_size 1 \
---mask_word "<mask>" \
+--mask_word "###" \

@@ -1,4 +1,5 @@
 #!/bin/bash
+CUDA_VISIBLE_DEVICES=1 \
 python code/main.py \
 --mode certify \
 --dataset_name sst2 \
@@ -9,6 +10,6 @@ python code/main.py \
 --ceritfy_ensemble 500 \
 --denoise_method alpaca \
 --predictor alpaca_sst2 \
---alpaca_batchsize 3 \
+--alpaca_batchsize 4 \
 --world_size 1 \
---mask_word "<mask>" \
+--mask_word "###" \
